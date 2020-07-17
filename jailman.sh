@@ -128,7 +128,6 @@ done
 
 # auto detect iocage install location
 global_dataset_iocage=$(zfs get -H -o value mountpoint "$(iocage get -p)"/iocage)
-global_dataset_iocage=${global_dataset_iocage#/mnt/}
 export global_dataset_iocage
 
 # load all config
@@ -160,11 +159,13 @@ if [ ${#installjails[@]} -gt 0 ]; then
 		then
 			echo "Config for ${jail} in config.yml incorrect. Please check your config."
 			exit 1
-		elif [ -f "${SCRIPT_DIR}/blueprints/${!blueprint}/install.sh" ]
+		else
+			jailcreate "${jail}" "${!blueprint}" 
+		fi
+		if [ -f "${global_dataset_iocage}/jails/${jail}/plugin/jailman/finish_install.sh" ]
 		then
-
 			# check blueprint install script for syntax errors
-			blueprint_installer="${SCRIPT_DIR}/blueprints/${!blueprint}/install.sh"
+			blueprint_installer="${global_dataset_iocage}/jails/${jail}/plugin/jailman/finish_install.sh"
 			if ! bash -n "${blueprint_installer}" 2>/dev/null; then
 				echo "ERR: Blueprint install script at ${blueprint_installer} has syntax errors."
 				echo "Please report this issue to the maintainer according to docs/CODEOWNERS."
@@ -173,9 +174,9 @@ if [ ${#installjails[@]} -gt 0 ]; then
 			fi
 
 			echo "Installing $jail"
-			jailcreate "${jail}" "${!blueprint}" && "${SCRIPT_DIR}"/blueprints/"${!blueprint}"/install.sh "${jail}"
+			${global_dataset_iocage}/jails/${jail}/plugin/jailman/finish_install.sh "${jail}"
 		else
-			echo "Missing blueprint ${!blueprint} for $jail in ${SCRIPT_DIR}/blueprints/${!blueprint}/install.sh"
+			echo "Missing blueprint ${!blueprint} for $jail in ${global_dataset_iocage}/jails/${jail}/plugin/jailman/finish_install.sh"
 			exit 1
 		fi
 	done
@@ -187,16 +188,21 @@ if [ ${#redojails[@]} -gt 0 ]; then
 	for jail in "${redojails[@]}"
 	do
 		blueprint=jail_${jail}_blueprint
+		getplugin ${!blueprint}
 		if [ -z "${!blueprint:-}" ]
 		then
 			echo "Config for ${jail} in config.yml incorrect. Please check your config."
 			exit 1
-		elif [ -f "${SCRIPT_DIR}/blueprints/${!blueprint}/install.sh" ]
+		elif [ -z "$(cat ${SCRIPT_DIR}/tmp/iocage-plugins/INDEX | jq -r 'keys[]' | grep ${!blueprint})" ]
+		then
+			echo "Plugin ${!blueprint} does not exist in the plugin-index"
+			exit 1
+		elif [ -f "${SCRIPT_DIR}/tmp/plugins/iocage-plugin-${!blueprint}/jailman/finish_install.sh" ]
 		then
 			echo "Reinstalling $jail"
-			iocage destroy -fR "${jail}" && cleanupblueprint "${jail}" && jailcreate "${jail}" "${!blueprint}" && "${SCRIPT_DIR}"/blueprints/"${!blueprint}"/install.sh "${jail}"
+			iocage destroy -fR "${jail}" && cleanupblueprint "${jail}" && jailcreate "${jail}" "${!blueprint}" && ${SCRIPT_DIR}/tmp/plugins/iocage-plugin-${!blueprint}/jailman/finish_install.sh "${jail}"
 		else
-			echo "Missing blueprint ${!blueprint} for $jail in ${SCRIPT_DIR}/blueprints/${!blueprint}/install.sh"
+			echo "Missing blueprint ${!blueprint} for $jail in ${SCRIPT_DIR}/tmp/plugins/iocage-plugin-${!blueprint}/jailman/finish_install.sh"
 			exit 1
 		fi
 	done
@@ -208,18 +214,23 @@ if [ ${#updatejails[@]} -gt 0 ]; then
 	for jail in "${updatejails[@]}"
 	do
 		blueprint=jail_${jail}_blueprint
+		getplugin ${!blueprint}
 		if [ -z "${!blueprint:-}" ]
 		then
 			echo "Config for ${jail} in config.yml incorrect. Please check your config."
 			exit 1
-		elif [ -f "${SCRIPT_DIR}/blueprints/${!blueprint}/update.sh" ]
+		elif [ -z "$(cat ${SCRIPT_DIR}/tmp/iocage-plugins/INDEX | jq -r 'keys[]' | grep ${!blueprint})" ]
+		then
+			echo "Plugin ${!blueprint} does not exist in the plugin-index"
+			exit 1
+		elif [ -f "${SCRIPT_DIR}/tmp/plugins/iocage-plugin-${!blueprint}/jailman/finish_update.sh" ]
 		then
 			echo "Updating $jail"
 			iocage update "${jail}"
-			iocage exec "${jail}" "pkg update && pkg upgrade -y" && "${SCRIPT_DIR}"/blueprints/"${!blueprint}"/update.sh "${jail}"
+			iocage exec "${jail}" "pkg update && pkg upgrade -y" && ${SCRIPT_DIR}/tmp/plugins/iocage-plugin-${!blueprint}/jailman/finish_update.sh "${jail}"
 			iocage restart "${jail}"
 		else
-			echo "Missing blueprint ${!blueprint} for $jail in ${SCRIPT_DIR}/blueprints/${!blueprint}/install.sh"
+			echo "Missing blueprint ${!blueprint} for $jail in ${SCRIPT_DIR}/tmp/plugins/iocage-plugin-${!blueprint}/jailman/finish_update.sh"
 			exit 1
 		fi
 	done
@@ -231,11 +242,16 @@ if [ ${#upgradejails[@]} -gt 0 ]; then
 	for jail in "${upgradejails[@]}"
 	do
 		blueprint=jail_${jail}_blueprint
+		getplugin ${!blueprint}
 		if [ -z "${!blueprint:-}" ]
 			then
 			echo "Config for ${jail} in config.yml incorrect. Please check your config."
 			exit 1
-		elif [ -f "${SCRIPT_DIR}/blueprints/${!blueprint}/update.sh" ]
+		elif [ -z "$(cat ${SCRIPT_DIR}/tmp/iocage-plugins/INDEX | jq -r 'keys[]' | grep ${!blueprint})" ]
+		then
+			echo "Plugin ${!blueprint} does not exist in the plugin-index"
+			exit 1
+		elif [ -f "${SCRIPT_DIR}/tmp/plugins/iocage-plugin-${!blueprint}/jailman/finish_update.sh" ]
 		then
 			echo "Currently Upgrading is not yet included in this script."
 		else

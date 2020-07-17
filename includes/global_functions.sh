@@ -13,9 +13,9 @@ jailcreate() {
 	fi
 
 	echo "Checking config..."
-	local blueprintpkgs blueprintports jailinterfaces jailip4 jailgateway jaildhcp setdhcp blueprintextraconf jailextraconf setextra reqvars reqvars
-
-	blueprintpkgs="blueprint_${blueprint}_pkgs"
+	local pluginrepo blueprintports jailinterfaces jailip4 jailgateway jaildhcp setdhcp blueprintextraconf jailextraconf setextra reqvars reqvars version
+	
+	pluginrepo="https://github.com/jailmanager/iocage-plugins.git"
 	blueprintports="blueprint_${blueprint}_ports"
 	jailinterfaces="jail_${jail}_interfaces"
 	jailip4="jail_${jail}_ip4_addr"
@@ -49,24 +49,21 @@ if [ -z "${setdhcp}" ] && [ -z "${!jailip4}" ] && [ -z "${!jailgateway}" ]; then
 	fi
 
 	echo "Creating jail for $jail"
-	pkgs="$(sed 's/[^[:space:]]\{1,\}/"&"/g;s/ /,/g' <<<"${global_jails_pkgs:?} ${!blueprintpkgs}")"
-	echo '{"pkgs":['"${pkgs}"']}' > /tmp/pkg.json
 	if [ "${setdhcp}" == "on" ] || [ "${setdhcp}" == "override" ]
 	then
-		if ! iocage create -n "${jail}" -p /tmp/pkg.json -r "${version}" interfaces="${jailinterfaces}" dhcp="on" vnet="on" allow_raw_sockets="1" boot="on" ${setextra:+"$setextra"} -b
+		if !  iocage fetch -g "${pluginrepo}" -P ${blueprint} -n "${jail}" -r ${version} interfaces="${jailinterfaces}" dhcp="on" vnet="on" allow_raw_sockets="1" boot="on" ${setextra:+"$setextra"}
 		then
 			echo "Failed to create jail"
 			exit 1
 		fi
 	else
-		if ! iocage create -n "${jail}" -p /tmp/pkg.json -r "${version}" interfaces="${jailinterfaces}" ip4_addr="vnet0|${!jailip4}" defaultrouter="${!jailgateway}" vnet="on" allow_raw_sockets="1" boot="on" ${setextra:+"$setextra"} -b
+		if !  iocage fetch -g "${pluginrepo}" -P ${blueprint} -n "${jail}" -r ${version} interfaces="${jailinterfaces}" ip4_addr="vnet0|${!jailip4}" defaultrouter="${!jailgateway}" vnet="on" allow_raw_sockets="1" boot="on" ${setextra:+"$setextra"}
 		then
 			echo "Failed to create jail"
 			exit 1
 		fi
 	fi
-
-	rm /tmp/pkg.json
+	
 	echo "creating jail config directory"
 	createmount "${jail}" "${global_dataset_config}" || exit 1
 	createmount "${jail}" "${global_dataset_config}"/"${jail}" /config || exit 1
@@ -125,4 +122,3 @@ createmount() {
 	fi
 }
 export -f createmount
-
