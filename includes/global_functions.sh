@@ -11,6 +11,13 @@ jailcreate() {
 		echo "jail and blueprint are required"
 		exit 1
 	fi
+	
+	if [ -z "$(iocage list -q | grep "${jail}")" ]; then
+		echo ""
+	else
+		echo "Jail ${jail} already exists..."
+		exit 1
+	fi
 
 	echo "Checking config..."
 	local pluginrepo blueprintports jailinterfaces jailip4 jailgateway jaildhcp setdhcp blueprintextraconf jailextraconf setextra reqvars reqvars version
@@ -25,18 +32,11 @@ jailcreate() {
 	blueprintextraconf="blueprint_${blueprint}_custom_iocage"
 	jailextraconf="jail_${jail}_custom_iocage"
 	setextra="${!blueprintextraconf:-}${!jailextraconf:+ ${!jailextraconf}}"
-	reqvars=blueprint_${blueprint}_reqvars
-	reqvars="${!reqvars:-}${global_jails_reqvars:+ ${!global_vars_reqvars}}"
+	
 	version="$(freebsd-version | sed "s/STABLE/RELEASE/g" | sed "s/-p[0-9]*//")"
 
-	for reqvar in $reqvars
-	do
-		varname=jail_${jail}_${reqvar}
-		if [ -z "${!varname}" ]; then
-			echo "$varname can't be empty"
-			exit 1
-		fi
-	done
+
+
 
 	if [ -z "${!jailinterfaces:-}" ]; then
 		jailinterfaces="vnet0:bridge0"
@@ -63,6 +63,15 @@ if [ -z "${setdhcp}" ] && [ -z "${!jailip4}" ] && [ -z "${!jailgateway}" ]; then
 			exit 1
 		fi
 	fi
+	
+	for reqvar in $(jq -r '.jailman | .variables | .required | .[]' "${global_dataset_iocage}/jails/${jail}/${blueprint}.json")
+	do
+		varname=jail_${jail}_${reqvar}
+		if [ -z "${!varname:-}" ]; then
+			echo "$varname can't be empty"
+			exit 1
+		fi
+	done
 	
 	echo "creating jail config directory"
 	createmount "${jail}" "${global_dataset_config}" || exit 1
