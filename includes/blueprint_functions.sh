@@ -9,11 +9,11 @@ initblueprint() {
 
 	local jail_name blueprint varlist linkblueprint linkvarlist value val linkvalue linkval
 	jail_name=${1:?}
-
 	blueprint=jail_${jail_name}_blueprint
-	varlist=blueprint_${!blueprint}_vars
 
-	for var in ${!varlist:-} ${global_jails_vars}
+	varlist=$(jq -r '.jailman | .variables | .options | .[]' "${global_dataset_iocage}/jails/${jail_name}/${!blueprint}.json")
+
+	for var in ${varlist:-} ${global_jails_vars}
 	do
 		value="jail_${jail_name}_$var"
 		val=${!value:-}
@@ -27,7 +27,7 @@ initblueprint() {
 				echo "ERR: a link to $val was requested but no blueprint was found for it"
 			fi
 
-			linkvarlist=blueprint_${linkblueprint_name}_vars
+			linkvarlist=$(jq -r '.jailman | .variables | .options | .[]' "${global_dataset_iocage}/jails/${val}/${!linkblueprint_name}.json")
 			for linkvar in ${!linkvarlist:-} ${global_jails_vars}
 			do
 				linkvalue="jail_${val}_${linkvar}"
