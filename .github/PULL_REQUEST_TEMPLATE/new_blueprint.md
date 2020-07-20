@@ -1,6 +1,6 @@
 ---
-name: New Blueprint
-about: Submit a new blueprint to help us expand JailMan
+name: New plugin
+about: Submit a new plugin to help us expand JailMan
 title: ''
 labels: feature
 assignees: ''
@@ -38,4 +38,4 @@ _Please enter any other relevant information here_
 - [ ] My changes generate no new warnings
 - [ ] I have added tests to this description that prove my fix is effective or that my feature works
 - [ ] Any new files are named using lowercase (to avoid issues on case sensitive file systems)
-- [ ] I've added myself as a codeowner for the new blueprint in /docs/CODEOWNERS
+- [ ] I've added myself as a codeowner for the new plugin in /docs/CODEOWNERS

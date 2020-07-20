@@ -13,17 +13,17 @@ This function triggers an update based on the branch it is given.
 Currently only called in jailman.sh and it is fed the remote/branch combo it is currently on.
 
 ## jailcreate
-This function creates the actual jail based on a blueprint.
-It takes the jail name, looks up the blueprint and proceeds accordingly.
+This function creates the actual jail based on a plugin.
+It takes the jail name, looks up the plugin and proceeds accordingly.
 It also creates things like basic mount points and such. while also checking if all required vars are filled.
 
 Currently only used in jailman.sh
 
-## initblueprint
-This function turns all config.yml variables for the jail inputed as $1 into local variables. This is not required (as variables are also available as `${!jail_$1_varname}`), but makes it easier for less experienced blueprint creators to start working with Jailman
+## initplugin
+This function turns all config.yml variables for the jail inputed as $1 into local variables. This is not required (as variables are also available as `${!jail_$1_varname}`), but makes it easier for less experienced plugin creators to start working with Jailman
 It takes only the Jailname as input.
 
-## exitblueprint
+## exitplugin
 This script does the "success" processing for an installation. It takes the name of the jail and a message (preferable a connection instruction), creates the "INSTALLED" file, does the last checks and outputs the successmessages
 No additional scripting besides `echo`'s should be done after executing this script.
 
