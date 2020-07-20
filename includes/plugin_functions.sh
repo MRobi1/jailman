@@ -23,17 +23,19 @@ initplugin() {
 		then
 			linkplugin=jail_${val}_plugin
 			linkplugin_name=${!linkplugin:-}
-			if [ -z "${linkplugin_name}" ]; then
+			
+			if [ -z "$(iocage list -q | grep "${jail}")" ]; 
+			then
 				echo "ERR: a link to $val was requested but no plugin was found for it"
+			else
+				linkvarlist=$(jq -r '.jailman | .variables | .options | .[]' "${global_dataset_iocage}/jails/${val}/${!linkplugin_name:-}.json")
+				for linkvar in ${!linkvarlist:-} ${global_jails_vars}
+				do
+					linkvalue="jail_${val}_${linkvar}"
+					linkval=${!linkvalue:-}
+					declare -g "${var}_${linkvar}=${linkval}"
+				done
 			fi
-
-			linkvarlist=$(jq -r '.jailman | .variables | .options | .[]' "${global_dataset_iocage}/jails/${val}/${!linkplugin_name}.json")
-			for linkvar in ${!linkvarlist:-} ${global_jails_vars}
-			do
-				linkvalue="jail_${val}_${linkvar}"
-				linkval=${!linkvalue:-}
-				declare -g "${var}_${linkvar}=${linkval}"
-			done
 		fi
 	done
 
