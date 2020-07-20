@@ -188,21 +188,28 @@ if [ ${#redojails[@]} -gt 0 ]; then
 	for jail in "${redojails[@]}"
 	do
 		plugin=jail_${jail}_plugin
-		getplugin ${!plugin}
 		if [ -z "${!plugin:-}" ]
 		then
 			echo "Config for ${jail} in config.yml incorrect. Please check your config."
 			exit 1
-		elif [ -z "$(cat ${SCRIPT_DIR}/tmp/iocage-plugins/INDEX | jq -r 'keys[]' | grep ${!plugin})" ]
-		then
-			echo "Plugin ${!plugin} does not exist in the plugin-index"
-			exit 1
-		elif [ -f "${SCRIPT_DIR}/tmp/plugins/iocage-plugin-${!plugin}/jailman/finish_install.sh" ]
-		then
-			echo "Reinstalling $jail"
-			iocage destroy -fR "${jail}" && cleanupplugin "${jail}" && jailcreate "${jail}" "${!plugin}" && ${SCRIPT_DIR}/tmp/plugins/iocage-plugin-${!plugin}/jailman/finish_install.sh "${jail}"
 		else
-			echo "Missing plugin ${!plugin} for $jail in ${SCRIPT_DIR}/tmp/plugins/iocage-plugin-${!plugin}/jailman/finish_install.sh"
+			iocage destroy -fR "${jail}" && cleanupplugin "${jail}" && jailcreate "${jail}" "${!plugin}" 
+		fi
+		if [ -f "${global_dataset_iocage}/jails/${jail}/plugin/jailman/finish_install.sh" ]
+		then
+			# check plugin install script for syntax errors
+			plugin_installer="${global_dataset_iocage}/jails/${jail}/plugin/jailman/finish_install.sh"
+			if ! bash -n "${plugin_installer}" 2>/dev/null; then
+				echo "ERR: plugin install script at ${plugin_installer} has syntax errors."
+				echo "Please report this issue to the maintainer according to docs/CODEOWNERS."
+				echo "Will not continue."
+				exit 1
+			fi
+
+			echo "Reinstalling $jail"
+			${global_dataset_iocage}/jails/${jail}/plugin/jailman/finish_install.sh "${jail}"
+		else
+			echo "Missing plugin ${!plugin} for $jail in ${global_dataset_iocage}/jails/${jail}/plugin/jailman/finish_install.sh"
 			exit 1
 		fi
 	done
@@ -214,23 +221,29 @@ if [ ${#updatejails[@]} -gt 0 ]; then
 	for jail in "${updatejails[@]}"
 	do
 		plugin=jail_${jail}_plugin
-		getplugin ${!plugin}
 		if [ -z "${!plugin:-}" ]
 		then
 			echo "Config for ${jail} in config.yml incorrect. Please check your config."
 			exit 1
-		elif [ -z "$(cat ${SCRIPT_DIR}/tmp/iocage-plugins/INDEX | jq -r 'keys[]' | grep ${!plugin})" ]
-		then
-			echo "Plugin ${!plugin} does not exist in the plugin-index"
-			exit 1
-		elif [ -f "${SCRIPT_DIR}/tmp/plugins/iocage-plugin-${!plugin}/jailman/finish_update.sh" ]
-		then
-			echo "Updating $jail"
+		else
 			iocage update "${jail}"
-			iocage exec "${jail}" "pkg update && pkg upgrade -y" && ${SCRIPT_DIR}/tmp/plugins/iocage-plugin-${!plugin}/jailman/finish_update.sh "${jail}"
+		fi
+		if [ -f "${global_dataset_iocage}/jails/${jail}/plugin/jailman/finish_install.sh" ]
+		then
+			# check plugin install script for syntax errors
+			plugin_updater="${global_dataset_iocage}/jails/${jail}/plugin/jailman/finish_update.sh"
+			if ! bash -n "${plugin_updater}" 2>/dev/null; then
+				echo "ERR: plugin update script at ${plugin_updater} has syntax errors."
+				echo "Please report this issue to the maintainer according to docs/CODEOWNERS."
+				echo "Will not continue."
+				exit 1
+			fi
+
+			echo "Updating $jail"
+			${global_dataset_iocage}/jails/${jail}/plugin/jailman/finish_update.sh "${jail}"
 			iocage restart "${jail}"
 		else
-			echo "Missing plugin ${!plugin} for $jail in ${SCRIPT_DIR}/tmp/plugins/iocage-plugin-${!plugin}/jailman/finish_update.sh"
+			echo "Missing plugin ${!plugin} for $jail in ${global_dataset_iocage}/jails/${jail}/plugin/jailman/finish_update.sh"
 			exit 1
 		fi
 	done
@@ -242,17 +255,24 @@ if [ ${#upgradejails[@]} -gt 0 ]; then
 	for jail in "${upgradejails[@]}"
 	do
 		plugin=jail_${jail}_plugin
-		getplugin ${!plugin}
 		if [ -z "${!plugin:-}" ]
-			then
+		then
 			echo "Config for ${jail} in config.yml incorrect. Please check your config."
 			exit 1
-		elif [ -z "$(cat ${SCRIPT_DIR}/tmp/iocage-plugins/INDEX | jq -r 'keys[]' | grep ${!plugin})" ]
+		else
+			echo "Currently Upgrading is not yet included in this script."
+		fi
+		if [ -f "${global_dataset_iocage}/jails/${jail}/plugin/jailman/finish_upgrade.sh" ]
 		then
-			echo "Plugin ${!plugin} does not exist in the plugin-index"
-			exit 1
-		elif [ -f "${SCRIPT_DIR}/tmp/plugins/iocage-plugin-${!plugin}/jailman/finish_update.sh" ]
-		then
+			# check plugin install script for syntax errors
+			plugin_upgrader="${global_dataset_iocage}/jails/${jail}/plugin/jailman/finish_upgrade.sh"
+			if ! bash -n "${plugin_upgrader}" 2>/dev/null; then
+				echo "ERR: plugin upgrade script at ${plugin_upgrader} has syntax errors."
+				echo "Please report this issue to the maintainer according to docs/CODEOWNERS."
+				echo "Will not continue."
+				exit 1
+			fi
+
 			echo "Currently Upgrading is not yet included in this script."
 		else
 			echo "Currently Upgrading is not yet included in this script."
