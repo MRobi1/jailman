@@ -87,11 +87,9 @@ exitplugin() {
 	jail_name=${1:?}
 	status_message=${2:-}
 	plugin_name=jail_${jail_name}_plugin
-	traefik_service_port=$(jq -r '.jailman | .traefik_service_port' "${global_dataset_iocage}/jails/${jail_name}/${!plugin_name}.json")
-	traefik_service_port="${!traefik_service_port:-}"
+	traefik_service_port="$(jq -r '.jailman | .traefik_service_port' "${global_dataset_iocage}/jails/${jail_name}/${!plugin_name}.json")"
 	traefik_includes="${SCRIPT_DIR}/plugins/traefik/includes"
 	traefik_status=""
-
 	jailip4="jail_${jail_name}_ip4_addr"
 	jailgateway="jail_${jail_name}_gateway"
 	jaildhcp="jail_${jail_name}_dhcp"
