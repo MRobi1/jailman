@@ -13,10 +13,6 @@ jobs:
         uses: actions/checkout@v1
         with:
           ref: 'master'
-      - name: rename-readme
-        run: |
-          for pathname in blueprints/*/readme.md; do cp "$pathname" "docs/blueprints/$( basename "$( dirname "$pathname" )" ).md"; done
-        shell: bash
       - name: Deploy docs
         uses: mhausenblas/mkdocs-deploy-gh-pages@master
         env:
