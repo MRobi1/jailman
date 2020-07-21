@@ -40,8 +40,8 @@ initplugin() {
 	done
 
 	declare -g "jail_root=${global_dataset_iocage}/jails/${jail_name}/root"
-	declare -g "plugin_dir=${SCRIPT_DIR}/plugins/${!plugin}"
-	declare -g "includes_dir=${SCRIPT_DIR}/plugins/${!plugin}/includes"
+	declare -g "plugin_dir=${global_dataset_iocage}/jails/${jail_name}/plugin/jailman/"
+	declare -g "includes_dir=${plugin_dir}/includes"
 
 	if [ -f "/mnt/${global_dataset_config}/${1}/INSTALLED" ]; then
 	    echo "Reinstall detected..."
